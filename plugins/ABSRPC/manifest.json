@@ -1,14 +1,15 @@
 {
-    "name": "AudioBookShelfRichPresence",
-    "description": "Rich presence for AudioBookShelf media server",
-    "authors": [
-        {
-            "name": "シグマ siguma",
-            "id": "737597276339437578"
-        }
-    ],
-    "main": "src/index.ts",
-    "vendetta": {
-        "icon": "audio"
+  "name": "injector",
+  "description": "Inject fake messages in DMs from anyone",
+  "authors": [
+    {
+      "name": "Author",
+      "id": "0"
     }
+  ],
+  "main": "index.ts",
+  "vendetta": {
+    "icon": "💬"
+  },
+  "version": "1.0.0"
 }
