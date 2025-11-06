@@ -1,5 +1,5 @@
 {
-  "name": "injector",
+  "name": "Injector",
   "description": "Inject fake messages in DMs from anyone",
   "authors": [
     {
@@ -12,4 +12,5 @@
     "icon": "💬"
   },
   "version": "1.0.0"
+
 }
