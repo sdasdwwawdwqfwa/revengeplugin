@@ -4,30 +4,104 @@
  * @version 1.0.0
  */
 
-// Extend Window interface for Bunny/Vendetta
+// Type declarations for Metro bundler
+declare const require: (module: string) => any;
+
+// Extend Window interface for various loaders
 declare global {
     interface Window {
         bunny: any;
         vendetta: any;
+        blueloader: any;
+        BlueLoader: any;
     }
 }
 
 // Detect which mod we're running on
 const isBunny = typeof window.bunny !== 'undefined';
 const isVendetta = typeof window.vendetta !== 'undefined';
-const API = isBunny ? window.bunny : window.vendetta;
+const isBlueLoader = typeof window.blueloader !== 'undefined' || typeof window.BlueLoader !== 'undefined';
 
-const { findByProps, findByStoreName } = API.metro;
-const { after, before } = API.patcher;
-const { storage } = API.plugin;
-const { showToast } = API.ui?.toasts || { showToast: console.log };
+// Import modules based on detected loader
+let findByProps: any, findByStoreName: any, after: any, before: any, storage: any, showToast: any;
 
-// Initialize storage
-storage.enabled ??= true;
-storage.debug ??= false;
-storage.persistentMessages ??= {};
-storage.autoInjectOnStartup ??= true;
-storage.preventMessageDeletion ??= true;
+if (isBlueLoader) {
+    // BlueLoader (iOS) - try multiple possible API structures
+    try {
+        const metro = require("@vendetta/metro");
+        const patcher = require("@vendetta/patcher");
+        const plugin = require("@vendetta/plugin");
+        const toasts = require("@vendetta/ui/toasts");
+        
+        findByProps = metro.findByProps;
+        findByStoreName = metro.findByStoreName;
+        after = patcher.after;
+        before = patcher.before;
+        storage = plugin.storage;
+        showToast = toasts.showToast;
+    } catch (e) {
+        // Fallback: try window API
+        const API = window.blueloader || window.BlueLoader;
+        if (API) {
+            ({ findByProps, findByStoreName } = API.metro || {});
+            ({ after, before } = API.patcher || {});
+            ({ storage } = API.plugin || {});
+            showToast = API.ui?.toasts?.showToast || console.log;
+        } else {
+            console.error('[MessageInjector] BlueLoader API not found!', e);
+        }
+    }
+} else if (isVendetta) {
+    // Use proper Vendetta imports
+    const metro = require("@vendetta/metro");
+    const patcher = require("@vendetta/patcher");
+    const plugin = require("@vendetta/plugin");
+    const toasts = require("@vendetta/ui/toasts");
+    
+    findByProps = metro.findByProps;
+    findByStoreName = metro.findByStoreName;
+    after = patcher.after;
+    before = patcher.before;
+    storage = plugin.storage;
+    showToast = toasts.showToast;
+} else if (isBunny) {
+    // Use Bunny API
+    const API = window.bunny;
+    ({ findByProps, findByStoreName } = API.metro);
+    ({ after, before } = API.patcher);
+    ({ storage } = API.plugin);
+    showToast = API.ui?.toasts?.showToast || console.log;
+} else {
+    // Fallback - try to use Vendetta modules anyway (BlueLoader might not expose window object)
+    try {
+        const metro = require("@vendetta/metro");
+        const patcher = require("@vendetta/patcher");
+        const plugin = require("@vendetta/plugin");
+        const toasts = require("@vendetta/ui/toasts");
+        
+        findByProps = metro.findByProps;
+        findByStoreName = metro.findByStoreName;
+        after = patcher.after;
+        before = patcher.before;
+        storage = plugin.storage;
+        showToast = toasts.showToast;
+        console.log('[MessageInjector] Using fallback module loading');
+    } catch (e) {
+        console.error('[MessageInjector] No compatible loader detected!', e);
+        showToast = console.log;
+    }
+}
+
+// Initialize storage (with safety check)
+if (storage) {
+    storage.enabled ??= true;
+    storage.debug ??= false;
+    storage.persistentMessages ??= {};
+    storage.autoInjectOnStartup ??= true;
+    storage.preventMessageDeletion ??= true;
+} else {
+    console.error('[MessageInjector] Storage not available! Plugin may not work correctly.');
+}
 
 const unpatches: (() => void)[] = [];
 let FluxDispatcher: any = null;
@@ -141,7 +215,7 @@ async function createMessageObject(options: {
     if (!username) {
         const userInfo = await getUserInfo(options.userId);
         username = userInfo.username;
-        if (!avatar) avatar = userInfo.avatar;
+        if (!avatar) avatar = userInfo.avatar || undefined;
     }
 
     const message = {
@@ -223,9 +297,9 @@ export async function fakeMessage(options: {
 
     try {
         // Get channel ID
-        let channelId = options.channelId;
+        let channelId: string | undefined = options.channelId;
         if (!channelId && options.targetUserId) {
-            channelId = getDMChannelId(options.targetUserId);
+            channelId = getDMChannelId(options.targetUserId) || undefined;
         }
 
         if (!channelId) {
