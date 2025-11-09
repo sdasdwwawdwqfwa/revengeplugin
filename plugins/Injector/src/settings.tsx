@@ -58,7 +58,7 @@ function getAPI() {
     return (window as any).__MESSAGE_FAKER__;
 }
 
-export default () => {
+export default function Settings() {
     useProxy(storage);
 
     const [targetUserId, setTargetUserId] = React.useState("");
