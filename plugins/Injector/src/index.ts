@@ -9,7 +9,7 @@ import { before } from "@vendetta/patcher";
 import { storage } from "@vendetta/plugin";
 import { showToast } from "@vendetta/ui/toasts";
 import { logger } from "@vendetta";
-import settingsComponent from "./settings";
+import Settings from "./settings";
 
 // Initialize storage defaults
 storage.enabled ??= true;
@@ -987,5 +987,5 @@ export default {
         }
     },
 
-    settings: settingsComponent,
+    settings: Settings,
 };
